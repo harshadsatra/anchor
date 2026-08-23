@@ -5,10 +5,17 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import crypto from 'crypto'
 import fs from 'fs'
+import os from 'os'
 import { fileURLToPath } from 'url'
 
 const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const pkg = JSON.parse(fs.readFileSync(path.join(DIR, 'package.json'), 'utf8'))
+
+// Run against a throwaway profile. The renderer persists settings and renames
+// to localStorage, which lives in userData - so consecutive runs would inherit
+// the previous run's font sizes and aliases and fail on a dirty baseline.
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'anchor-verify-'))
+app.setPath('userData', profile)
 
 const FIXTURE = [
   {
@@ -191,6 +198,16 @@ app.whenReady().then(async () => {
     /version:\s*pkg\.version/.test(mainSrc) && !/version:\s*app\.getVersion\(\)/.test(mainSrc),
   )
   push('EPIPE on stdout is non-fatal', mainSrc.includes("s.on('error', () => {})"))
+  push(
+    'reopen is handled (LSUIElement apps report "not responding" without it)',
+    mainSrc.includes("app.on('activate'") && mainSrc.includes("app.on('second-instance'"),
+  )
+  push('a second launch cannot spawn a rival tray icon',
+    mainSrc.includes('requestSingleInstanceLock'))
+  push(
+    'frontmost poll is a setTimeout chain, not setInterval',
+    !/frontmostTimer = setInterval/.test(mainSrc),
+  )
   push('preload built as CJS (sandbox cannot load ESM)',
     fs.existsSync(path.join(DIR, 'out/preload/index.js')) &&
     fs.readFileSync(path.join(DIR, 'out/preload/index.js'), 'utf8').includes('"use strict"'))
@@ -226,5 +243,10 @@ app.whenReady().then(async () => {
     console.log('FAIL  renderer console errors: ' + consoleErrors.join(' | '))
   }
   console.log(failed ? `\n${failed} failing` : `\nAll ${results.length + 1} UI checks passed.`)
+  try {
+    fs.rmSync(profile, { recursive: true, force: true })
+  } catch {
+    /* best effort */
+  }
   app.exit(failed ? 1 : 0)
 })

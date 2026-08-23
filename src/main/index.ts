@@ -172,6 +172,15 @@ function togglePopover(): void {
     hidePopover()
     return
   }
+  showPopover()
+}
+
+function showPopover(): void {
+  if (!popover) return
+  if (popover.isVisible()) {
+    popover.focus()
+    return
+  }
 
   positionPopoverUnderTray()
   popover.show()
@@ -222,14 +231,20 @@ async function sendWindowList(): Promise<void> {
 /** Runs whether or not the popover is open — switching apps is exactly what
  *  happens while it's closed. */
 function startFrontmostTracking(): void {
-  frontmostTimer = setInterval(async () => {
+  // setTimeout chain, not setInterval: if an osascript call ever blocks (a TCC
+  // consent dialog, System Events wedging) setInterval keeps firing and the
+  // calls stack up every 2s until the app stops responding.
+  const tick = async (): Promise<void> => {
     try {
       const name = await runAppleScript(FRONTMOST_SCRIPT)
       if (name) mru.set(name, Date.now())
     } catch {
       // Permission not granted yet, or a transient System Events hiccup.
+    } finally {
+      frontmostTimer = setTimeout(tick, FRONTMOST_INTERVAL)
     }
-  }, FRONTMOST_INTERVAL)
+  }
+  frontmostTimer = setTimeout(tick, FRONTMOST_INTERVAL)
 }
 
 // --- IPC ---------------------------------------------------------------------
@@ -266,6 +281,18 @@ ipcMain.on('open-external', (_e, url: string) => {
 
 // --- lifecycle ---------------------------------------------------------------
 
+// A second launch must not spawn a rival tray icon.
+if (!app.requestSingleInstanceLock()) {
+  app.exit(0)
+}
+
+// Double-clicking an LSUIElement app that is already running sends a reopen
+// event. With nothing handling it, macOS reports "You can't open the
+// application because it is not responding" - even though the app is running
+// perfectly well in the menu bar. Surface the popover instead.
+app.on('activate', () => showPopover())
+app.on('second-instance', () => showPopover())
+
 app.whenReady().then(() => {
   app.dock?.hide() // menu-bar-only app, no Dock icon
 
@@ -295,7 +322,7 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll()
-  if (frontmostTimer) clearInterval(frontmostTimer)
+  if (frontmostTimer) clearTimeout(frontmostTimer)
   if (refreshTimer) clearTimeout(refreshTimer)
 })
 

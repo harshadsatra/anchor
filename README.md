@@ -37,6 +37,13 @@ Because the build is only ad-hoc signed, its signature hash changes with every
 release, so macOS asks again after an update. A real Developer ID signature
 fixes that permanently.
 
+**"You can't open the application Anchor because it is not responding"** — this
+appears when you double-click an already-running menu-bar app. Anchor has no
+Dock icon and no window, so LaunchServices had nothing to activate and timed
+out. Fixed from v1.0.7 on: reopening now surfaces the popover. Also make sure
+you're launching the copy in `/Applications`, not one still inside the mounted
+`.dmg` — running from the read-only image gives its own set of odd errors.
+
 **If it keeps re-asking and never lists any windows**, check the signature:
 
 ```bash
@@ -273,5 +280,4 @@ immediately on open, so it's never blank for three seconds.
   property access is an Apple Event. A native Swift/ObjC Accessibility helper
   would be far faster, at the cost of a compiled dependency.
 - **MRU only covers this session** — recency is in memory and resets on quit.
-- **Nothing enforces a single instance** — launching twice gives two tray
-  icons. `app.requestSingleInstanceLock()` would fix it.
+- **Renames only survive while a window keeps its title** (see above).
