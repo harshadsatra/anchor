@@ -62,6 +62,15 @@ The workflow typechecks, tests, builds, and runs the headless UI check before
 publishing — a broken build never reaches a Release. It uses the automatic
 `GITHUB_TOKEN`, so no secrets to configure.
 
+> **If a release looks like it produced nothing:** electron-builder defaults
+> to `releaseType: draft`, which uploads the `.dmg` but leaves the release
+> visible only to the repo owner — the public Releases page stays empty and
+> the API returns nothing, exactly as if the build failed. `electron-builder.yml`
+> sets `releaseType: release` to avoid this. If you ever see a green workflow
+> and no release, check <https://github.com/harshadsatra/anchor/releases>
+> while signed in — the draft is usually sitting right there with the assets
+> attached.
+
 `.github/workflows/ci.yml` runs the same checks on every push and PR.
 
 ### Signing and notarization (optional)

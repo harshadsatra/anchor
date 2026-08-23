@@ -53,3 +53,7 @@ publish:
   provider: github
   owner: harshadsatra
   repo: anchor
+  # electron-builder defaults to "draft", which uploads the artifacts but
+  # leaves the release invisible to everyone except the repo owner - it looks
+  # exactly like the build produced nothing. Publish it outright instead.
+  releaseType: release
