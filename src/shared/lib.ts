@@ -16,7 +16,7 @@ export function parseWindowList(raw: string): Map<string, WindowEntry[]> {
     const idx = Number(index)
     if (!Number.isInteger(idx) || idx < 1) continue
 
-    // Rejoin: a window title is allowed to contain "|||" itself.
+    // A title may contain "|||" itself.
     const title = rest.join('|||')
     const list = groups.get(appName)
     if (list) list.push({ title, index: idx })
@@ -38,7 +38,7 @@ export function sortGroups(list: readonly AppGroup[], mode: SortMode): AppGroup[
       (a, b) => b.windows.length - a.windows.length || a.appName.localeCompare(b.appName),
     )
   }
-  // recent: most-recently-frontmost first, then apps never seen front, A-Z
+  // most-recently-frontmost first, then never-seen apps A-Z
   return copy.sort((a, b) => {
     const av = a.lastFrontAt || 0
     const bv = b.lastFrontAt || 0

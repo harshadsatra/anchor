@@ -32,8 +32,7 @@ export const settings = reactive<Settings>({
   listFont: load('listFont', 'medium', FONTS),
 })
 
-/** Persist + apply on any change. Auto theme removes the attribute so the
- *  prefers-color-scheme media query takes over. */
+/** Auto removes the attribute so prefers-color-scheme takes over. */
 export function useSettingsEffects(): void {
   watchEffect(() => {
     const root = document.documentElement
@@ -48,7 +47,7 @@ export function useSettingsEffects(): void {
       localStorage.setItem('appFont', settings.appFont)
       localStorage.setItem('listFont', settings.listFont)
     } catch {
-      /* private window / blocked storage */
+      /* blocked storage */
     }
   })
 }

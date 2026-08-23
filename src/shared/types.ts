@@ -1,6 +1,6 @@
 export interface WindowEntry {
   title: string
-  /** Real AX window index. Counts untitled windows we skip, so it stays valid. */
+  /** Real AX index: counts the untitled windows we skip. */
   index: number
 }
 
@@ -8,7 +8,7 @@ export interface AppGroup {
   appName: string
   windows: WindowEntry[]
   icon: string | null
-  /** Timestamp this app was last frontmost; 0 if never seen. */
+  /** 0 if never seen frontmost. */
   lastFrontAt: number
 }
 

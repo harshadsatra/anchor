@@ -22,7 +22,7 @@ const selectedKey = ref<string | null>(null)
 const searchEl = ref<HTMLInputElement | null>(null)
 const windowsTab = ref<InstanceType<typeof WindowsTab> | null>(null)
 
-/** Flat list of visible row keys, in render order — what the arrows walk. */
+/** Visible rows in render order - what the arrows walk. */
 const visibleKeys = computed<{ key: string; appName: string; index: number }[]>(() => {
   const q = query.value.trim().toLowerCase()
   const out: { key: string; appName: string; index: number }[] = []
@@ -68,23 +68,21 @@ function onKeydown(e: KeyboardEvent): void {
   if (editingKey.value) return // the rename input owns the keyboard
 
   if (tab.value === 'settings') {
-    if (e.metaKey || e.ctrlKey || e.altKey) return // real shortcuts pass through
+    if (e.metaKey || e.ctrlKey || e.altKey) return // let real shortcuts through
     if (e.key === 'Escape') {
       window.api.hidePopover()
       return
     }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      showTab('windows') // then fall through to the nav below
+      showTab('windows') // fall through to the nav below
     } else if (e.key.length === 1 && e.key !== ' ') {
-      // Typing is meant for the filter, so jump back and keep the keystroke.
+      // Typing is meant for the filter; keep the keystroke.
       e.preventDefault()
       showTab('windows')
       query.value += e.key
       return
     } else {
-      // Tab/Enter/Space stay put, or the segmented controls stop being
-      // keyboard-operable.
-      return
+      return // Tab/Enter/Space must stay, or the segments aren't keyboard-usable
     }
   }
 
@@ -95,9 +93,8 @@ function onKeydown(e: KeyboardEvent): void {
     e.preventDefault()
     moveSelection(-1)
   } else if (e.key === 'Enter') {
+    // No selection: Enter takes the first match.
     const list = visibleKeys.value
-    // With no explicit selection, Enter takes the first match - the usual
-    // "type a few letters and hit Enter" flow.
     const row = list.find((r) => r.key === selectedKey.value) ?? list[0]
     if (row) activate(row.appName, row.index)
   } else if (e.key === 'Escape') {

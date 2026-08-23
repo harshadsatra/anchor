@@ -10,8 +10,7 @@ const props = defineProps<{
   groups: AppGroup[]
   error: string
   query: string
-  /** False until the first window-list payload arrives. Without this an empty
-   *  groups array reads as "No windows found" during the ~3s first scan. */
+  /** Until this is true an empty list means "still scanning", not "none". */
   loaded: boolean
   selectedKey: string | null
   editingKey: string | null
@@ -34,7 +33,7 @@ const visible = computed<AppGroup[]>(() => {
   return sorted
     .map((g) => {
       if (g.appName.toLowerCase().includes(q)) return g
-      // Match the shown name too, so a rename is findable by its new name.
+      // Match the shown name too, so renames are findable by their new name.
       const windows = g.windows.filter(
         (w) =>
           w.title.toLowerCase().includes(q) ||

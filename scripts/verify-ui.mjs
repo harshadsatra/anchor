@@ -219,8 +219,10 @@ app.whenReady().then(async () => {
     'reopen is handled (LSUIElement apps report "not responding" without it)',
     mainSrc.includes("app.on('activate'") && mainSrc.includes("app.on('second-instance'"),
   )
+  // Checks code, not comment text: getGroupedWindows is called both by
+  // sendWindowList and by the startup warm.
   push('startup warms the window cache so the first open is not blank',
-    /Warm the cache shortly after launch/.test(mainSrc))
+    (mainSrc.match(/getGroupedWindows\(\)/g) || []).length >= 2)
   push('cache warm does not prompt for Accessibility unprompted',
     /isTrustedAccessibilityClient\(false\)/.test(mainSrc))
   push('a second launch cannot spawn a rival tray icon',

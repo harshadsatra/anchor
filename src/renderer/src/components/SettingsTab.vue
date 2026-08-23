@@ -6,13 +6,11 @@ import { aliases, clearAliases } from '../composables/useAliases'
 
 defineProps<{ shortcut: ShortcutStatus | null }>()
 
-// Fill these in. An empty string hides that link rather than shipping a dead
-// one. Links open in the real browser via shell.openExternal (main validates
-// the scheme); an <a href> would navigate the popover itself.
+// Empty string hides that link. Opened via shell.openExternal - an <a href>
+// would navigate the popover itself.
 const DEV = {
   name: 'Harshad Satra',
-  // Shown between the name and the links. Empty falls back to the app's own
-  // description from package.json.
+  // Empty falls back to the package.json description.
   tagline: '',
   website: 'https://harshadsatra.com',
   github: 'https://github.com/harshadsatra',
@@ -39,7 +37,7 @@ const links = computed(() =>
 const infoText = computed(() => DEV.tagline || appInfo.value?.description || '')
 const aliasCount = computed(() => Object.keys(aliases).length)
 
-/** window is not in template scope in Vue 3. */
+/** window isn't in template scope. */
 const openLink = (url: string): void => window.api.openExternal(url)
 
 const prettyAccel = (a: string): string =>

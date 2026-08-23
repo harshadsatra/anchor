@@ -1,9 +1,8 @@
 import { execFile } from 'child_process'
 
 /**
- * Lists every window of every visible process as "AppName|||Index|||Title".
- * Index is the real AX window index and counts windows we skip, so untitled
- * windows (menu extras, helpers) don't shift the indices of the ones we keep.
+ * "AppName|||Index|||Title" per titled window. Index counts the untitled
+ * windows we skip, so it stays a valid AX index.
  */
 export const LIST_WINDOWS_SCRIPT = `
 tell application "System Events"
@@ -36,11 +35,7 @@ end tell
 export const FRONTMOST_SCRIPT =
   'tell application "System Events" to return name of (first process whose frontmost is true)'
 
-/**
- * Bundle paths for icon lookup. Deliberately kept out of the hot path: fetching
- * these alongside the window list measured ~1.2s slower per poll, and each
- * app's path is only needed once.
- */
+/** Kept out of the hot path: fetching these per poll measured ~1.2s slower. */
 export const APP_PATHS_SCRIPT = `
 tell application "System Events"
   set output to {}
@@ -65,12 +60,12 @@ export function runAppleScript(script: string): Promise<string> {
   })
 }
 
-/** AppleScript string literals need backslashes escaped before quotes. */
+/** Backslashes must be escaped before quotes. */
 export function esc(s: string): string {
   return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 }
 
-/** Raises a specific window by AX index, so duplicate titles stay distinct. */
+/** By AX index, not title - duplicate titles would otherwise collide. */
 export function focusWindow(appName: string, windowIndex: number): Promise<string> {
   const name = esc(appName)
   return runAppleScript(`

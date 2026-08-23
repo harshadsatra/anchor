@@ -1,6 +1,5 @@
-// Runs sandboxed: only 'electron' may be imported. Anything else (a
-// require('./package.json'), say) fails to load the preload entirely and
-// leaves window.api undefined, which kills the whole popover.
+// Sandboxed: only 'electron' may be imported. Anything else fails the whole
+// preload, leaving window.api undefined and the popover dead.
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppGroup, AppInfo, ShortcutStatus } from '../shared/types'
 

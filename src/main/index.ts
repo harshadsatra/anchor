@@ -17,9 +17,8 @@ import { parseWindowList } from '../shared/lib'
 import type { AppGroup } from '../shared/types'
 import pkg from '../../package.json'
 
-// A menu-bar app has no console. If stdout/stderr is a dead pipe (launched from
-// a terminal that has since closed), Electron's own logging raises EPIPE and
-// kills the app. Never let that be fatal.
+// A dead stdout pipe (terminal closed) makes Electron's own logging raise
+// EPIPE and kill the app. Never fatal.
 for (const s of [process.stdout, process.stderr]) s.on('error', () => {})
 
 let tray: Tray | null = null
@@ -29,19 +28,15 @@ let frontmostTimer: NodeJS.Timeout | null = null
 let lastGroups: AppGroup[] = []
 let shortcutOk = false
 
-/** Full enumeration measures ~2.8s, so anything below that just stacks calls. */
-const REFRESH_INTERVAL = 8000
+const REFRESH_INTERVAL = 8000 // full enumeration measures ~2.8s
 
-// ponytail: 2s frontmost poll is the MRU resolution knob. The query is cheap
-// (~0.11s wall, 0.02s CPU); raise this if idle CPU ever matters more than
-// recency accuracy.
+// ponytail: MRU resolution knob. Query is cheap (~0.11s wall, 0.02s CPU).
 const FRONTMOST_INTERVAL = 2000
 
 const GLOBAL_SHORTCUT = 'Command+Shift+L'
 
-/** Passing `true` SHOWS the system prompt every time it is called while
- *  untrusted, and this sits on an 8s refresh loop - which nags the user
- *  forever. Prompt once, then poll silently. */
+/** Passing `true` re-shows the system prompt on every call, and this sits on
+ *  the refresh loop. Prompt once, then poll silently. */
 let accessibilityPrompted = false
 
 function hasAccessibility(): boolean {
@@ -50,11 +45,10 @@ function hasAccessibility(): boolean {
   return systemPreferences.isTrustedAccessibilityClient(shouldPrompt)
 }
 
-/** appName -> last frontmost timestamp. macOS reports processes in launch
- *  order, never z-order, so recency has to be tracked here. */
+/** macOS reports processes in launch order, never z-order, so track recency. */
 const mru = new Map<string, number>()
 
-/** appName -> icon dataURL (null = tried and failed, don't retry). */
+/** null = tried and failed; don't retry. */
 const iconCache = new Map<string, string | null>()
 
 async function cacheIconsFor(appNames: string[]): Promise<void> {
@@ -120,22 +114,18 @@ function createPopover(): void {
 
   popover.on('blur', () => hidePopover())
 
-  // The popover must never navigate away or open child windows.
+  // Never navigate away or open child windows.
   popover.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   popover.webContents.on('will-navigate', (e) => e.preventDefault())
 
-  // Without this the popover stays permanently blank after a renderer crash.
+  // Otherwise the popover stays blank forever after a renderer crash.
   popover.webContents.on('render-process-gone', (_e, details) => {
     console.warn('Popover renderer gone:', details?.reason)
     if (popover && !popover.isDestroyed()) popover.reload()
   })
 }
 
-/**
- * Every send routes through here. The render frame can be disposed while a
- * ~3s enumeration is in flight, and an unguarded send throws — including from
- * the catch block in sendWindowList, which is how it once escaped uncaught.
- */
+/** The render frame can be disposed mid-enumeration; an unguarded send throws. */
 function sendToPopover(channel: string, payload?: unknown): boolean {
   if (!popover || popover.isDestroyed()) return false
   const wc = popover.webContents
@@ -144,7 +134,7 @@ function sendToPopover(channel: string, payload?: unknown): boolean {
     wc.send(channel, payload)
     return true
   } catch {
-    return false // frame went away mid-flight
+    return false
   }
 }
 
@@ -187,15 +177,15 @@ function showPopover(): void {
   popover.show()
   popover.focus()
 
-  // Render what we already have so the popover isn't blank for ~3s.
+  // Render cached data so the popover isn't blank for ~3s.
   if (lastGroups.length) sendToPopover('window-list', lastGroups)
   sendToPopover('shortcut-status', { accelerator: GLOBAL_SHORTCUT, ok: shortcutOk })
 
   scheduleRefresh(0)
 }
 
-// setTimeout chain rather than setInterval: the query can outrun the interval,
-// and overlapping osascript calls would pile up.
+// setTimeout chain, not setInterval: the query can outrun the interval and
+// overlapping osascript calls pile up.
 function scheduleRefresh(delay: number): void {
   if (refreshTimer) clearTimeout(refreshTimer)
   refreshTimer = setTimeout(() => {
@@ -210,8 +200,8 @@ function scheduleRefresh(delay: number): void {
 }
 
 async function sendWindowList(): Promise<void> {
-  // Window enumeration needs Accessibility; without it System Events errors on
-  // every process and we'd silently render an empty list.
+  // Without Accessibility, System Events errors on every process and we'd
+  // silently render an empty list.
   if (!hasAccessibility()) {
     sendToPopover(
       'window-list-error',
@@ -229,12 +219,10 @@ async function sendWindowList(): Promise<void> {
   }
 }
 
-/** Runs whether or not the popover is open — switching apps is exactly what
- *  happens while it's closed. */
+/** Runs while the popover is closed too - that's when apps get switched. */
 function startFrontmostTracking(): void {
-  // setTimeout chain, not setInterval: if an osascript call ever blocks (a TCC
-  // consent dialog, System Events wedging) setInterval keeps firing and the
-  // calls stack up every 2s until the app stops responding.
+  // setTimeout chain: if an osascript call blocks (TCC dialog, System Events
+  // wedging) setInterval would stack calls until the app stops responding.
   const tick = async (): Promise<void> => {
     try {
       const name = await runAppleScript(FRONTMOST_SCRIPT)
@@ -252,12 +240,12 @@ function startFrontmostTracking(): void {
 
 ipcMain.handle('get-app-info', () => ({
   name: 'Anchor',
-  version: pkg.version, // not app.getVersion(): falls back to Electron's version
+  version: pkg.version, // app.getVersion() falls back to Electron's version
   description: pkg.description,
 }))
 
 ipcMain.on('focus-window', (_e, { appName, windowIndex }: { appName: string; windowIndex: number }) => {
-  mru.set(appName, Date.now()) // clicking is a guaranteed activation
+  mru.set(appName, Date.now()) // a click is a guaranteed activation
   focusWindow(appName, windowIndex).catch((err) => console.error('Focus failed:', err))
   hidePopover()
 })
@@ -265,9 +253,8 @@ ipcMain.on('focus-window', (_e, { appName, windowIndex }: { appName: string; win
 ipcMain.on('hide-popover', () => hidePopover())
 ipcMain.on('request-refresh', () => scheduleRefresh(0))
 
-// Renderer can ask to open a link in the real browser. Validate the scheme
-// here: this is a trust boundary, and shell.openExternal will happily hand a
-// file:// or custom-scheme URL to the OS.
+// Trust boundary: shell.openExternal will hand file:// or custom schemes
+// straight to the OS, so validate before opening.
 ipcMain.on('open-external', (_e, url: string) => {
   let parsed: URL
   try {
@@ -282,23 +269,20 @@ ipcMain.on('open-external', (_e, url: string) => {
 
 // --- lifecycle ---------------------------------------------------------------
 
-// A second launch must not spawn a rival tray icon.
+// No rival tray icon on a second launch.
 if (!app.requestSingleInstanceLock()) {
   app.exit(0)
 }
 
-// Double-clicking an LSUIElement app that is already running sends a reopen
-// event. With nothing handling it, macOS reports "You can't open the
-// application because it is not responding" - even though the app is running
-// perfectly well in the menu bar. Surface the popover instead.
+// Reopening an LSUIElement app with nothing to activate makes macOS report
+// "not responding". Surface the popover instead.
 app.on('activate', () => showPopover())
 app.on('second-instance', () => showPopover())
 
 app.whenReady().then(() => {
   app.dock?.hide() // menu-bar-only app, no Dock icon
 
-  // Template image: black + alpha only, so macOS inverts it for dark menu
-  // bars and highlight states. Electron picks up @2x alongside it.
+  // Template image: macOS inverts it for dark menu bars and highlights.
   const trayIcon = nativeImage.createFromPath(
     path.join(__dirname, '../../assets/trayTemplate.png'),
   )
@@ -307,8 +291,7 @@ app.whenReady().then(() => {
   tray.setToolTip('Anchor — click to see open windows')
   tray.on('click', togglePopover)
 
-  // right-click only: setContextMenu would hijack left-click on macOS and
-  // break the popover toggle.
+  // right-click only: setContextMenu would hijack left-click too.
   tray.on('right-click', () => {
     hidePopover()
     tray?.popUpContextMenu(
@@ -323,10 +306,8 @@ app.whenReady().then(() => {
   createPopover()
   startFrontmostTracking()
 
-  // Warm the cache shortly after launch so the first popover open renders
-  // immediately instead of sitting on a ~3s scan. Deliberately uses the
-  // non-prompting check: the consent dialog should follow a user action, not
-  // appear unprompted at login.
+  // Warm the cache so the first open isn't a ~3s scan. Non-prompting check:
+  // the consent dialog should follow a user action, not appear at login.
   setTimeout(() => {
     if (!systemPreferences.isTrustedAccessibilityClient(false)) return
     getGroupedWindows()
@@ -335,7 +316,7 @@ app.whenReady().then(() => {
         sendToPopover('window-list', groups)
       })
       .catch(() => {
-        /* first real open will surface any error */
+        /* the first real open surfaces any error */
       })
   }, 1500)
 
@@ -349,6 +330,5 @@ app.on('will-quit', () => {
   if (refreshTimer) clearTimeout(refreshTimer)
 })
 
-// Subscribing at all is what keeps a menu-bar app alive with no windows;
-// the old e.preventDefault() here was a no-op (the event takes no argument).
+// Subscribing at all is what keeps a menu-bar app alive with no windows.
 app.on('window-all-closed', () => {})

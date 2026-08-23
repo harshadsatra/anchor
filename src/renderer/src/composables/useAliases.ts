@@ -1,12 +1,8 @@
 import { reactive } from 'vue'
 
-/**
- * Renames are keyed on app + original title. Window titles are volatile, so a
- * rename sticks to whatever window carries that exact title and detaches once
- * the title changes (a Chrome tab switch, say). Keying on AX index instead
- * would be worse: indices shift as windows open and close, silently moving a
- * rename onto a different window.
- */
+// Keyed on title, not AX index: indices shift as windows open and close, which
+// would silently move a rename onto a different window. Cost is that a rename
+// detaches when the title changes.
 export const aliasKey = (appName: string, title: string): string => `${appName}|||${title}`
 
 function load(): Record<string, string> {
@@ -28,7 +24,7 @@ function persist(): void {
   }
 }
 
-/** Empty (or unchanged) value clears the rename rather than storing a no-op. */
+/** Empty or unchanged clears the rename. */
 export function setAlias(key: string, value: string, original: string): void {
   const v = value.trim()
   if (!v || v === original) delete aliases[key]
