@@ -66,10 +66,36 @@ npm run dist:dir    # unpacked .app only, for quick testing
 npm run icon        # regenerate the app icon from build/icon-source.html
 ```
 
-Output is a **universal** binary (x86_64 + arm64), so one download works on
-both Apple Silicon and Intel. That doubles the size — ~208MB, since it carries
-two full Electron runtimes. To ship smaller per-arch builds instead, change the
-`arch` in `electron-builder.yml` from `[universal]` to `[arm64, x64]`.
+Two per-arch `.dmg`s are produced — `Anchor-<version>-arm64.dmg` for Apple
+Silicon and `-x64.dmg` for Intel.
+
+### On size
+
+Electron is the entire cost. Measured on a 489MB universal build:
+
+| Component | Size |
+|---|---|
+| Electron Framework | 484 MB |
+| Everything else (frameworks, helpers) | ~4 MB |
+| **Anchor's own code** (`app.asar`) | **232 KB** |
+
+Your app is 0.05% of the bundle. What was actually reducible:
+
+- **Per-arch instead of universal** — a universal bundle ships two complete
+  Electron frameworks, so every user downloads an architecture they can't run.
+  This is the whole win: 489MB → 229MB installed, 208MB → 94MB downloaded.
+- **Dropped the `.zip` target** — it exists to feed Squirrel auto-update, which
+  this app doesn't use, and it doubled every release upload.
+- **`electronLanguages: [en-US]`** — removes 109 `.lproj` dirs. Honest
+  accounting: ~1MB. Free, but not the fix.
+- **`compression: maximum`** — slower builds, smaller downloads.
+
+**~229MB installed is Electron's floor for one architecture** and no config
+gets under it. If that's unacceptable for a menu-bar window lister — a fair
+position — the only real answer is not shipping a browser engine. A native
+Swift/SwiftUI menu-bar app doing exactly this would be single-digit MB, since
+the Accessibility API it would call is the same one being driven through
+AppleScript here. That's a rewrite, not a setting.
 
 ### Publishing to GitHub Releases
 

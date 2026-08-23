@@ -16,11 +16,17 @@ files:
 mac:
   category: public.app-category.utilities
   icon: build/icon.icns
+  # Per-arch builds, NOT universal. A universal bundle carries two complete
+  # Electron frameworks (484MB of a 489MB app) so every user downloads an
+  # architecture they cannot run. Separate builds halve the download.
+  # The zip target is dropped: it only exists to feed Squirrel auto-update,
+  # which this app does not use, and it doubled every release upload.
   target:
     - target: dmg
-      arch: [universal]
-    - target: zip
-      arch: [universal]
+      arch: [arm64, x64]
+  # Ship one language. Electron bundles 109 .lproj dirs; this is a small win
+  # (~1MB) but free.
+  electronLanguages: [en-US]
   hardenedRuntime: true
   gatekeeperAssess: false
   # Ad-hoc sign ("-"). Without this electron-builder skips signing entirely
@@ -45,8 +51,12 @@ mac:
       Anchor needs Accessibility access to read window titles across apps and
       raise the window you select.
 
+# Slower to build, smaller to download.
+compression: maximum
+
 dmg:
   title: ${productName} ${version}
+  artifactName: ${productName}-${version}-${arch}.${ext}
   contents:
     - x: 140
       y: 180
