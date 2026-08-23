@@ -38,6 +38,17 @@ const FRONTMOST_INTERVAL = 2000
 
 const GLOBAL_SHORTCUT = 'Command+Shift+L'
 
+/** Passing `true` SHOWS the system prompt every time it is called while
+ *  untrusted, and this sits on an 8s refresh loop - which nags the user
+ *  forever. Prompt once, then poll silently. */
+let accessibilityPrompted = false
+
+function hasAccessibility(): boolean {
+  const shouldPrompt = !accessibilityPrompted
+  accessibilityPrompted = true
+  return systemPreferences.isTrustedAccessibilityClient(shouldPrompt)
+}
+
 /** appName -> last frontmost timestamp. macOS reports processes in launch
  *  order, never z-order, so recency has to be tracked here. */
 const mru = new Map<string, number>()
@@ -191,7 +202,7 @@ function scheduleRefresh(delay: number): void {
 async function sendWindowList(): Promise<void> {
   // Window enumeration needs Accessibility; without it System Events errors on
   // every process and we'd silently render an empty list.
-  if (!systemPreferences.isTrustedAccessibilityClient(true)) {
+  if (!hasAccessibility()) {
     sendToPopover(
       'window-list-error',
       'Accessibility permission required. Enable it in System Settings → Privacy & Security → Accessibility, then restart the app.',

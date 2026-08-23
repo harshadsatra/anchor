@@ -23,6 +23,13 @@ mac:
       arch: [universal]
   hardenedRuntime: true
   gatekeeperAssess: false
+  # Ad-hoc sign ("-"). Without this electron-builder skips signing entirely
+  # when there's no Developer ID, leaving the raw linker signature: the bundle
+  # reports Identifier=Electron with an unbound Info.plist and no sealed
+  # resources. macOS TCC keys Accessibility grants off the code signature, so
+  # an unsigned bundle can never match a grant - the app re-prompts forever
+  # and never sees any windows.
+  identity: '-'
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:

@@ -33,8 +33,30 @@ macOS gates behind two prompts:
    enable **Anchor**.
 2. **Automation** — allow Anchor to control **System Events** when asked.
 
-Because the app is unsigned, its identity changes on every rebuild, so macOS
-may ask again after an update. A signed build fixes that permanently.
+Because the build is only ad-hoc signed, its signature hash changes with every
+release, so macOS asks again after an update. A real Developer ID signature
+fixes that permanently.
+
+**If it keeps re-asking and never lists any windows**, check the signature:
+
+```bash
+codesign -dv --verbose=2 /Applications/Anchor.app
+```
+
+`Identifier` must be `com.harshadsatra.anchor`. If it says `Identifier=Electron`
+with `Info.plist=not bound`, the bundle was never signed — macOS TCC keys
+Accessibility grants off the code signature, so it can never match the grant
+back to the app. Re-sign and reset the stale grant:
+
+```bash
+codesign --force --deep --sign - --options runtime \
+  --entitlements build/entitlements.mac.plist /Applications/Anchor.app
+tccutil reset Accessibility com.harshadsatra.anchor
+tccutil reset AppleEvents com.harshadsatra.anchor
+```
+
+Then re-enable Anchor in Accessibility. Builds from v1.0.4 on are ad-hoc signed
+by electron-builder (`identity: '-'`), so this shouldn't recur.
 
 ## Building a release
 
