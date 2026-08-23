@@ -13,7 +13,8 @@
     "verify:ui": "electron scripts/verify-ui.mjs",
     "dist": "npm run build && electron-builder --mac",
     "dist:dir": "npm run build && electron-builder --mac --dir",
-    "icon": "electron scripts/render-icon.mjs && ./scripts/make-icns.sh"
+    "icon": "electron scripts/render-icon.mjs && ./scripts/make-icns.sh && electron scripts/render-tray.mjs",
+    "icon:tray": "electron scripts/render-tray.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

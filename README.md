@@ -75,7 +75,8 @@ by electron-builder (`identity: '-'`), so this shouldn't recur.
 ```bash
 npm run dist        # universal .dmg + .zip into release/
 npm run dist:dir    # unpacked .app only, for quick testing
-npm run icon        # regenerate the app icon from build/icon-source.html
+npm run icon        # regenerate both icons from build/*-source.html
+npm run icon:tray   # menu-bar template icon only
 ```
 
 Two per-arch `.dmg`s are produced — `Anchor-<version>-arm64.dmg` for Apple

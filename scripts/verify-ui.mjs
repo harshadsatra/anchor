@@ -6,8 +6,10 @@ import path from 'path'
 import crypto from 'crypto'
 import fs from 'fs'
 import os from 'os'
+import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 
+const require = createRequire(import.meta.url)
 const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const pkg = JSON.parse(fs.readFileSync(path.join(DIR, 'package.json'), 'utf8'))
 
@@ -204,6 +206,20 @@ app.whenReady().then(async () => {
   )
   push('a second launch cannot spawn a rival tray icon',
     mainSrc.includes('requestSingleInstanceLock'))
+
+  // The Tray constructor throws on a missing file and takes the app with it.
+  const trayPng = path.join(DIR, 'assets/trayTemplate.png')
+  push('tray icon asset exists', fs.existsSync(trayPng))
+  push('tray icon is a 22px template image', (() => {
+    if (!fs.existsSync(trayPng)) return false
+    const { nativeImage } = require('electron')
+    const img = nativeImage.createFromPath(trayPng)
+    return !img.isEmpty() && img.getSize().width === 22
+  })())
+  push('tray icon has an @2x variant for retina',
+    fs.existsSync(path.join(DIR, 'assets/trayTemplate@2x.png')))
+  push('tray is set as a template image (adapts to light/dark menu bar)',
+    mainSrc.includes('setTemplateImage(true)'))
   push(
     'frontmost poll is a setTimeout chain, not setInterval',
     !/frontmostTimer = setInterval/.test(mainSrc),

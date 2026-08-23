@@ -4,6 +4,7 @@ import {
   globalShortcut,
   ipcMain,
   Menu,
+  nativeImage,
   screen,
   shell,
   systemPreferences,
@@ -296,7 +297,13 @@ app.on('second-instance', () => showPopover())
 app.whenReady().then(() => {
   app.dock?.hide() // menu-bar-only app, no Dock icon
 
-  tray = new Tray(path.join(__dirname, '../../assets/tray-icon.png'))
+  // Template image: black + alpha only, so macOS inverts it for dark menu
+  // bars and highlight states. Electron picks up @2x alongside it.
+  const trayIcon = nativeImage.createFromPath(
+    path.join(__dirname, '../../assets/trayTemplate.png'),
+  )
+  trayIcon.setTemplateImage(true)
+  tray = new Tray(trayIcon)
   tray.setToolTip('Anchor — click to see open windows')
   tray.on('click', togglePopover)
 
