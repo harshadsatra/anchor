@@ -6,6 +6,11 @@ Enter — to jump straight to that window.
 
 Built with **Electron + Vue 3 + TypeScript** (electron-vite).
 
+| Windows — dark | Windows — light | Settings |
+|:---:|:---:|:---:|
+| <img src="screenshots/1.png" alt="Anchor window list in dark mode" width="260"> | <img src="screenshots/2.png" alt="Anchor window list in light mode" width="260"> | <img src="screenshots/3.png" alt="Anchor settings tab" width="260"> |
+
+
 ## Download
 
 Grab the latest `.dmg` from **[Releases](https://github.com/harshadsatra/anchor/releases)**,
