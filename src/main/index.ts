@@ -323,6 +323,22 @@ app.whenReady().then(() => {
   createPopover()
   startFrontmostTracking()
 
+  // Warm the cache shortly after launch so the first popover open renders
+  // immediately instead of sitting on a ~3s scan. Deliberately uses the
+  // non-prompting check: the consent dialog should follow a user action, not
+  // appear unprompted at login.
+  setTimeout(() => {
+    if (!systemPreferences.isTrustedAccessibilityClient(false)) return
+    getGroupedWindows()
+      .then((groups) => {
+        lastGroups = groups
+        sendToPopover('window-list', groups)
+      })
+      .catch(() => {
+        /* first real open will surface any error */
+      })
+  }, 1500)
+
   shortcutOk = globalShortcut.register(GLOBAL_SHORTCUT, togglePopover)
   if (!shortcutOk) console.warn(`Could not register ${GLOBAL_SHORTCUT} — already taken.`)
 })

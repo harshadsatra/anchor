@@ -57,6 +57,15 @@ app.whenReady().then(async () => {
 
   await win.loadFile(path.join(DIR, 'out/renderer/index.html'))
 
+  // Before any data arrives the pane must NOT claim there are no windows -
+  // the first scan takes ~3s and "No windows found" is simply wrong there.
+  const preload_state = await win.webContents.executeJavaScript(
+    `(() => {
+      const el = document.querySelector('.empty-state')
+      return { text: el ? el.textContent.trim() : null }
+    })()`,
+  )
+
   // Feed the renderer through the real channels.
   win.webContents.send('window-list', FIXTURE)
   win.webContents.send('shortcut-status', { accelerator: 'Command+Shift+L', ok: true })
@@ -182,6 +191,12 @@ app.whenReady().then(async () => {
     return out
   })()`)
 
+  results.push({
+    name: 'shows a scanning state before the first payload, not "No windows found"',
+    pass: !!preload_state.text && !/No windows found/i.test(preload_state.text),
+    extra: JSON.stringify(preload_state.text),
+  })
+
   // --- main-process guards (source-level) ---
   const mainSrc = fs.readFileSync(path.join(DIR, 'src/main/index.ts'), 'utf8')
   const push = (name, pass, extra = '') => results.push({ name, pass, extra })
@@ -204,6 +219,10 @@ app.whenReady().then(async () => {
     'reopen is handled (LSUIElement apps report "not responding" without it)',
     mainSrc.includes("app.on('activate'") && mainSrc.includes("app.on('second-instance'"),
   )
+  push('startup warms the window cache so the first open is not blank',
+    /Warm the cache shortly after launch/.test(mainSrc))
+  push('cache warm does not prompt for Accessibility unprompted',
+    /isTrustedAccessibilityClient\(false\)/.test(mainSrc))
   push('a second launch cannot spawn a rival tray icon',
     mainSrc.includes('requestSingleInstanceLock'))
 

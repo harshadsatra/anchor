@@ -14,6 +14,7 @@ type Tab = 'windows' | 'settings'
 const tab = ref<Tab>('windows')
 const groups = ref<AppGroup[]>([])
 const error = ref('')
+const loaded = ref(false)
 const query = ref('')
 const shortcut = ref<ShortcutStatus | null>(null)
 const editingKey = ref<string | null>(null)
@@ -112,9 +113,11 @@ onMounted(() => {
   window.api.onWindowList((next) => {
     groups.value = next
     error.value = ''
+    loaded.value = true
   })
   window.api.onWindowListError((message) => {
     error.value = message
+    loaded.value = true
   })
   window.api.onShortcutStatus((status) => {
     shortcut.value = status
@@ -162,6 +165,7 @@ defineExpose({ showTab, tab, query, groups, selectedKey, editingKey, visibleKeys
       :groups="groups"
       :error="error"
       :query="query"
+      :loaded="loaded"
       :selected-key="selectedKey"
       :editing-key="editingKey"
       @activate="activate"

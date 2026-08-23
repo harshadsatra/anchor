@@ -10,6 +10,9 @@ const props = defineProps<{
   groups: AppGroup[]
   error: string
   query: string
+  /** False until the first window-list payload arrives. Without this an empty
+   *  groups array reads as "No windows found" during the ~3s first scan. */
+  loaded: boolean
   selectedKey: string | null
   editingKey: string | null
 }>()
@@ -46,6 +49,7 @@ const visible = computed<AppGroup[]>(() => {
 <template>
   <div ref="paneEl" class="pane">
     <div v-if="error" class="empty-state">{{ error }}</div>
+    <div v-else-if="!loaded" class="empty-state">Scanning windows…</div>
     <div v-else-if="!visible.length" class="empty-state">
       {{ query ? 'No matches.' : 'No windows found.' }}
     </div>
