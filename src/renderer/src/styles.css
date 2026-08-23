@@ -1,0 +1,76 @@
+/* Light is the base palette; dark overrides below. Both an explicit
+   [data-theme] and the system preference have to win, hence three blocks. */
+:root {
+  --bg: #f6f6f8;
+  --fg: #1c1c1e;
+  --muted: #6b6c72;
+  --dim: #8b8c93;
+  --hover: #e7e7ec;
+  --line: #dcdce2;
+  --accent: #3a5bd9;
+  --field: #ffffff;
+  --scroll: #c3c4cc;
+  --scroll-hi: #a9aab4;
+  --badge: #e2e2e9;
+  --app-font: 12.5px;
+  --list-font: 12.5px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #1e1f24;
+    --fg: #e6e6e8;
+    --muted: #a0a1a8;
+    --dim: #76777e;
+    --hover: #2f3038;
+    --line: #35363e;
+    --accent: #7a90ff;
+    --field: #26272e;
+    --scroll: #44454f;
+    --scroll-hi: #5a5b67;
+    --badge: #313239;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #1e1f24;
+  --fg: #e6e6e8;
+  --muted: #a0a1a8;
+  --dim: #76777e;
+  --hover: #2f3038;
+  --line: #35363e;
+  --accent: #7a90ff;
+  --field: #26272e;
+  --scroll: #44454f;
+  --scroll-hi: #5a5b67;
+  --badge: #313239;
+}
+
+* { box-sizing: border-box; }
+html, body, #app { height: 100%; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-user-select: none;
+  overflow: hidden;
+  font-size: 13px;
+}
+button { font-family: inherit; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
+
+/* Custom scrollbar - the stock one renders as a heavy light slab here. */
+.pane::-webkit-scrollbar { width: 11px; }
+.pane::-webkit-scrollbar-track { background: transparent; }
+.pane::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  min-height: 32px;
+}
+.pane::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-hi);
+  background-clip: content-box;
+}
+.pane::-webkit-scrollbar-corner { background: transparent; }

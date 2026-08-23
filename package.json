@@ -1,0 +1,26 @@
+{
+  "name": "anchor",
+  "version": "1.0.0",
+  "description": "Menu-bar widget that lists all open app windows grouped by app, click to focus.",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.node.json && vue-tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "check": "node scripts/check-applescript.mjs",
+    "verify:ui": "electron scripts/verify-ui.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "electron": "^43.4.1",
+    "electron-vite": "^5.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7",
+    "vue": "^3.5.41",
+    "vue-tsc": "^3.3.11"
+  }
+}
