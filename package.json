@@ -1,6 +1,6 @@
 {
   "name": "anchor",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Menu-bar widget that lists all open app windows grouped by app, click to focus.",
   "main": "out/main/index.js",
   "scripts": {
