@@ -1,0 +1,55 @@
+appId: com.harshadsatra.anchor
+productName: Anchor
+copyright: Copyright © 2026 Harshad Satra
+
+directories:
+  output: release
+  buildResources: build
+
+# electron-vite emits to out/; assets/ holds the tray icon, which main.js
+# resolves at ../../assets relative to out/main.
+files:
+  - out/**/*
+  - assets/**/*
+  - package.json
+
+mac:
+  category: public.app-category.utilities
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch: [universal]
+    - target: zip
+      arch: [universal]
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    # Menu-bar-only: no Dock icon, no app switcher entry. Set at the OS level
+    # so there's no Dock flash before app.dock.hide() runs.
+    LSUIElement: true
+    # macOS shows this string in the Automation consent prompt. Without it the
+    # prompt is suppressed and every AppleScript call fails silently.
+    NSAppleEventsUsageDescription: >-
+      Anchor uses System Events to list the open windows of running
+      applications and bring the one you pick to the front.
+    NSAccessibilityUsageDescription: >-
+      Anchor needs Accessibility access to read window titles across apps and
+      raise the window you select.
+
+dmg:
+  title: ${productName} ${version}
+  contents:
+    - x: 140
+      y: 180
+      type: file
+    - x: 400
+      y: 180
+      type: link
+      path: /Applications
+
+publish:
+  provider: github
+  owner: harshadsatra
+  repo: anchor

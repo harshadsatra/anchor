@@ -1,0 +1,35 @@
+name: Release
+
+# Publishes a GitHub Release when you push a version tag:
+#   npm version patch && git push --follow-tags
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # electron-builder needs this to create the Release
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Fail the release before publishing anything broken.
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run verify:ui
+
+      - name: Build and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --mac --publish always

@@ -6,6 +6,80 @@ Enter — to jump straight to that window.
 
 Built with **Electron + Vue 3 + TypeScript** (electron-vite).
 
+## Download
+
+Grab the latest `.dmg` from **[Releases](https://github.com/harshadsatra/anchor/releases)**,
+open it, and drag Anchor to Applications.
+
+### macOS will say the app is damaged — it isn't
+
+Anchor is **not code-signed** (that needs a paid Apple Developer ID). macOS
+quarantines unsigned apps downloaded from the internet and shows
+*"Anchor is damaged and can't be opened"*, which is misleading — it means
+unsigned, not corrupt. Clear the quarantine flag once:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Anchor.app
+```
+
+Then open it normally. Nothing else is needed.
+
+### Grant permissions on first run
+
+Anchor reads window titles across apps and raises the one you pick, which
+macOS gates behind two prompts:
+
+1. **Accessibility** — System Settings → Privacy & Security → Accessibility →
+   enable **Anchor**.
+2. **Automation** — allow Anchor to control **System Events** when asked.
+
+Because the app is unsigned, its identity changes on every rebuild, so macOS
+may ask again after an update. A signed build fixes that permanently.
+
+## Building a release
+
+```bash
+npm run dist        # universal .dmg + .zip into release/
+npm run dist:dir    # unpacked .app only, for quick testing
+npm run icon        # regenerate the app icon from build/icon-source.html
+```
+
+Output is a **universal** binary (x86_64 + arm64), so one download works on
+both Apple Silicon and Intel. That doubles the size — ~208MB, since it carries
+two full Electron runtimes. To ship smaller per-arch builds instead, change the
+`arch` in `electron-builder.yml` from `[universal]` to `[arm64, x64]`.
+
+### Publishing to GitHub Releases
+
+`.github/workflows/release.yml` builds and publishes on a version tag:
+
+```bash
+npm version patch      # or minor / major
+git push --follow-tags
+```
+
+The workflow typechecks, tests, builds, and runs the headless UI check before
+publishing — a broken build never reaches a Release. It uses the automatic
+`GITHUB_TOKEN`, so no secrets to configure.
+
+`.github/workflows/ci.yml` runs the same checks on every push and PR.
+
+### Signing and notarization (optional)
+
+To remove the quarantine dance for your users you need an Apple Developer ID
+($99/yr). With one, add these repo secrets and electron-builder handles the
+rest — `electron-builder.yml` already sets `hardenedRuntime` and the Apple
+Events entitlement that notarization requires:
+
+| Secret | What it is |
+|---|---|
+| `CSC_LINK` | base64 of your Developer ID `.p12` |
+| `CSC_KEY_PASSWORD` | its password |
+| `APPLE_ID` | your Apple ID email |
+| `APPLE_APP_SPECIFIC_PASSWORD` | app-specific password |
+| `APPLE_TEAM_ID` | your team id |
+
+
 ## Setup
 
 ```bash

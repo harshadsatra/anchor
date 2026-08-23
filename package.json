@@ -10,12 +10,16 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.node.json && vue-tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "check": "node scripts/check-applescript.mjs",
-    "verify:ui": "electron scripts/verify-ui.mjs"
+    "verify:ui": "electron scripts/verify-ui.mjs",
+    "dist": "npm run build && electron-builder --mac",
+    "dist:dir": "npm run build && electron-builder --mac --dir",
+    "icon": "electron scripts/render-icon.mjs && ./scripts/make-icns.sh"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
     "@vitejs/plugin-vue": "^6.0.8",
     "electron": "^43.4.1",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
