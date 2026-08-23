@@ -44,9 +44,11 @@ jobs:
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            release/*.dmg
-            release/*.zip
+          # Only .dmg is built now — the zip target was dropped (it existed
+          # solely for Squirrel auto-update). Keep this list in step with
+          # electron-builder.yml: fail_on_unmatched_files turns a stale glob
+          # into a failed release.
+          files: release/*.dmg
           # Fail loudly rather than publishing an empty release.
           fail_on_unmatched_files: true
           generate_release_notes: true
