@@ -2,13 +2,15 @@ name: Release
 
 # Publishes a GitHub Release when you push a version tag:
 #   npm version patch && git push --follow-tags
+# (npm version creates an ANNOTATED tag, which --follow-tags will push.
+#  A plain `git tag vX` is lightweight and gets silently skipped.)
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
 
 permissions:
-  contents: write # electron-builder needs this to create the Release
+  contents: write # needed to create the Release
 
 jobs:
   release:
@@ -23,13 +25,44 @@ jobs:
 
       - run: npm ci
 
-      # Fail the release before publishing anything broken.
+      # Fail before publishing anything broken.
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
       - run: npm run verify:ui
 
-      - name: Build and publish
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --mac --publish always
+      # Build only. electron-builder's own GitHub publisher is deliberately not
+      # used: it defaults to draft releases (invisible to everyone but the repo
+      # owner, indistinguishable from "no .dmg was produced").
+      - name: Build distributables
+        run: npx electron-builder --mac --publish never
+
+      # Make the artifacts visible in the log, so a missing .dmg is obvious.
+      - name: List artifacts
+        run: ls -lh release/
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.dmg
+            release/*.zip
+          # Fail loudly rather than publishing an empty release.
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            Download the `.dmg`, open it, drag **Anchor** to Applications.
+
+            macOS will say the app is *"damaged"* — it isn't. Anchor is
+            unsigned (no paid Apple Developer ID), and macOS quarantines
+            unsigned downloads. Clear it once:
+
+            ```bash
+            xattr -dr com.apple.quarantine /Applications/Anchor.app
+            ```
+
+            Then grant **Accessibility** (System Settings → Privacy &
+            Security → Accessibility) and allow **Automation** for System
+            Events when prompted.

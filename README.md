@@ -62,14 +62,18 @@ The workflow typechecks, tests, builds, and runs the headless UI check before
 publishing — a broken build never reaches a Release. It uses the automatic
 `GITHUB_TOKEN`, so no secrets to configure.
 
-> **If a release looks like it produced nothing:** electron-builder defaults
-> to `releaseType: draft`, which uploads the `.dmg` but leaves the release
-> visible only to the repo owner — the public Releases page stays empty and
-> the API returns nothing, exactly as if the build failed. `electron-builder.yml`
-> sets `releaseType: release` to avoid this. If you ever see a green workflow
-> and no release, check <https://github.com/harshadsatra/anchor/releases>
-> while signed in — the draft is usually sitting right there with the assets
-> attached.
+> **Why publishing is not left to electron-builder.** Its GitHub publisher
+> spawns one publisher per target. With both a `dmg` and a `zip`, the two run
+> concurrently, both check "does the release for this tag exist?", both get
+> "no", and both POST to `/releases`. One wins; the rest die with
+> `422 already_exists` — *after* the release has been created but *before*
+> the artifacts upload. The result is a green (or half-failed) workflow and a
+> release containing nothing, or only a stray `.blockmap`.
+>
+> The workflow therefore builds with `--publish never` and uploads once, in a
+> single step, via `softprops/action-gh-release` with
+> `fail_on_unmatched_files: true` — so a missing `.dmg` fails the run loudly
+> instead of publishing an empty release.
 
 `.github/workflows/ci.yml` runs the same checks on every push and PR.
 
